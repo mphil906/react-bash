@@ -2,6 +2,7 @@ import React, { Component, PropTypes } from 'react';
 import * as BaseCommands from './commands';
 import Bash from './bash';
 import Styles from './styles';
+import { setIntervalSynchronous } from './util';
 
 const CTRL_CHAR_CODE = 17;
 const L_CHAR_CODE = 76;
@@ -23,7 +24,7 @@ export default class Terminal extends Component {
             structure: Object.assign({}, structure),
             cwd: '',
             input: {
-              value: '',
+                value: '',
             },
         };
         this.handleKeyDown = this.handleKeyDown.bind(this);
@@ -31,42 +32,50 @@ export default class Terminal extends Component {
         this.handleChange = this.handleChange.bind(this);
     }
 
-    setIntervalSynchronous(func, delay) {
-      var intervalFunction, timeoutId, clear;
-      // Call to clear the interval.
-      clear = function () {
-        clearTimeout(timeoutId);
-      };
-      intervalFunction = function () {
-        func();
-        timeoutId = setTimeout(intervalFunction, delay);
-      }
-      // Delay start.
-      timeoutId = setTimeout(intervalFunction, delay);
-      // You should capture the returned function for clearing.
-      return clear;
-    };
+    callback() {
+        console.log('Callback was called.');
+    }
+
+    autoType(messages) {
+        const message = messages.shift();
+        console.log(message);
+        if (!message) {
+            return;
+        }
+        const chars = message.text.split('');
+        var intervalId = setInterval(() => {
+            const newState = this.state;
+            const c = chars.shift();
+            if (!c) {
+                this.refs.submitButton.click();
+                clearInterval(intervalId);
+                if (messages) {
+                    const timeout = message.timeout || 0;
+                    var timeoutId = setTimeout(() => {this.autoType(messages)}, timeout);
+                    return false;
+                } else {
+                    return false;
+                }
+            }
+            newState.input.value += c;
+            this.setState(newState);
+        }, message.speed);
+    }
 
     componentDidMount() {
-      const greeting = {
-        text: "echo Hello World, my name is Michael Phillips.",
-        speed: 70
-      }
-
-      let chars = greeting.text.split("");
-      let typingInterval = this.setIntervalSynchronous(() => {
-        let newState = this.state;
-        let c = chars.shift();
-        if (!c) {
-          this.refs.submitButton.click();
-          typingInterval.clear();
-          return;
-        }
-        newState.input.value += c;
-        this.setState(newState);
-      }, greeting.speed);
-
-      this.refs.input.focus();
+        this.refs.input.focus();
+        const messages = [
+            {
+                text: 'echo Hello World, my name is Michael Phillips.',
+                speed: 70,
+                timeout: 300,
+            },
+            {
+                text: 'echo Thank you for visiting my website.',
+                speed: 90,
+            },
+        ];
+        this.autoType(messages);
     }
 
     componentWillReceiveProps({ extensions, structure, history }) {
@@ -84,23 +93,23 @@ export default class Terminal extends Component {
     }
 
     /*
-     * Utilize immutability
-     */
+    * Utilize immutability
+    */
     shouldComponentUpdate(nextProps, nextState) {
         return (this.state !== nextState) || (this.props !== nextProps);
     }
 
     /*
-     * Keep input in view on change
-     */
+    * Keep input in view on change
+    */
     componentDidUpdate() {
         this.refs.input.scrollIntoView();
     }
 
     /*
-     * Forward the input along to the Bash autocompleter. If it works,
-     * update the input.
-     */
+    * Forward the input along to the Bash autocompleter. If it works,
+    * update the input.
+    */
     attemptAutocomplete() {
         const suggestion = this.Bash.autocomplete(this.state.input.value, this.state);
         if (suggestion) {
@@ -109,10 +118,10 @@ export default class Terminal extends Component {
     }
 
     /*
-     * Handle keydown for special hot keys. The tab key
-     * has to be handled on key down to prevent default.
-     * @param {Event} evt - the DOM event
-     */
+    * Handle keydown for special hot keys. The tab key
+    * has to be handled on key down to prevent default.
+    * @param {Event} evt - the DOM event
+    */
     handleKeyDown(evt) {
         if (evt.which === CTRL_CHAR_CODE) {
             this.ctrlPressed = true;
@@ -124,16 +133,16 @@ export default class Terminal extends Component {
     }
 
     /*
-     * Handle keyup for special hot keys.
-     * @param {Event} evt - the DOM event
-     *
-     * -- Supported hot keys --
-     * ctrl + l : clear
-     * ctrl + c : cancel current command
-     * up - prev command from history
-     * down - next command from history
-     * tab - autocomplete
-     */
+    * Handle keyup for special hot keys.
+    * @param {Event} evt - the DOM event
+    *
+    * -- Supported hot keys --
+    * ctrl + l : clear
+    * ctrl + c : cancel current command
+    * up - prev command from history
+    * down - next command from history
+    * tab - autocomplete
+    */
     handleKeyUp(evt) {
         if (evt.which === L_CHAR_CODE) {
             if (this.ctrlPressed) {
@@ -159,13 +168,12 @@ export default class Terminal extends Component {
     }
 
     handleChange(evt) {
-      let newState = this.state;
-      newState.input.value = evt.target.value;
-      this.setState(newState);
+        const newState = this.state;
+        newState.input.value = evt.target.value;
+        this.setState(newState);
     }
 
     handleSubmit(evt) {
-      console.log('SUBMISSION!~');
         evt.preventDefault();
 
         // Execute command
@@ -197,7 +205,7 @@ export default class Terminal extends Component {
                 </div>
                 <div style={style.body} onClick={() => this.refs.input.focus()}>
                     {history.map(this.renderHistoryItem(style))}
-                    <form ref='rbterminal' onSubmit={evt => this.handleSubmit(evt)} style={style.form}>
+                    <form ref="rbterminal" onSubmit={evt => this.handleSubmit(evt)} style={style.form}>
                         <span style={style.prefix}>{`${prefix} ~${cwd} $`}</span>
                         <input
                           autoComplete="off"
@@ -208,7 +216,7 @@ export default class Terminal extends Component {
                           value={this.state.input.value}
                           onChange={this.handleChange}
                         />
-                      <button style={{display:'none'}} ref='submitButton' type='submit'></button>
+                        <button style={{ display: 'none' }} ref="submitButton" type="submit"></button>
                     </form>
                 </div>
             </div>
