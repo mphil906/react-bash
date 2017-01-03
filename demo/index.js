@@ -34,5 +34,25 @@ const structure = {
     'README.md': { content: '✌⊂(✰‿✰)つ✌ Thanks for checking out the tool! There is a lot that you can do with react-bash and I\'m excited to see all of the fun commands and projects build on top of it!' },
 };
 
-const Root = <Terminal history={history} structure={structure} extensions={extensions} />;
+const messages = [
+    {
+        text: 'echo Hello World, my name is Michael Phillips.',
+        speed: 70,
+        timeout: 333,
+    },
+    {
+        text: 'echo I am a programmer, tech enthusiast, and musician.',
+        speed: 70,
+        timeout: 333,
+    },
+    {
+        text: 'echo Thank you for visiting my website.',
+        speed: 70,
+    },
+    {
+        text: 'cat README.md',
+        speed: 70,
+    },
+];
+const Root = <Terminal history={history} structure={structure} extensions={extensions} messages={messages} autotyping />;
 ReactDOM.render(Root, document.getElementById('app'));

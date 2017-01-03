@@ -33,18 +33,9 @@ export default class Terminal extends Component {
 
     componentDidMount() {
         this.refs.input.focus();
-        const messages = [
-            {
-                text: 'echo Hello World, my name is Michael Phillips.',
-                speed: 70,
-                timeout: 300,
-            },
-            {
-                text: 'echo Thank you for visiting my website.',
-                speed: 90,
-            },
-        ];
-        this.autoType(messages);
+        if (this.props.autotyping) {
+            this.autoType(this.props.messages);
+        }
     }
 
     componentWillReceiveProps({ extensions, structure, history }) {
@@ -77,6 +68,12 @@ export default class Terminal extends Component {
 
 /*
 * Autotype messages/commands into terminal's input
+*
+* Messages are of the form: {
+*   text: 'message',
+*   speed: 'message speed',
+*   timeout: 'time to pause'
+* }
 */
     autoType(messages) {
         const message = messages.shift();
@@ -91,10 +88,9 @@ export default class Terminal extends Component {
                 this.refs.submitButton.click();
                 clearInterval(intervalId);
                 if (messages) {
-                    const timeout = message.timeout || 0;
                     setTimeout(() => {
                         this.autoType(messages);
-                    }, timeout);
+                    }, message.timeout || 0);
                     return false;
                 } else {
                     return false;
@@ -232,6 +228,8 @@ Terminal.Themes = {
 Terminal.propTypes = {
     extensions: PropTypes.object,
     history: PropTypes.array,
+    messages: PropTypes.array,
+    autotyping: PropTypes.bool,
     onClose: PropTypes.func,
     onExpand: PropTypes.func,
     onMinimize: PropTypes.func,
