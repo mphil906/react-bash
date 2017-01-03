@@ -119,19 +119,3 @@ export function getEnvVariables(state) {
 export function isFile(entry) {
     return entry.content !== undefined;
 }
-
-export function setIntervalSynchronous(func, delay) {
-    var intervalFunction, timeoutId, clear;
-    // Call to clear the interval.
-    clear = function () {
-        clearTimeout(timeoutId);
-    };
-    intervalFunction = function () {
-        func();
-        timeoutId = setTimeout(intervalFunction, delay);
-    }
-    // Delay start.
-    timeoutId = setTimeout(intervalFunction, delay);
-    // You should capture the returned function for clearing.
-    return clear;
-}

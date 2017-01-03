@@ -2,7 +2,6 @@ import React, { Component, PropTypes } from 'react';
 import * as BaseCommands from './commands';
 import Bash from './bash';
 import Styles from './styles';
-import { setIntervalSynchronous } from './util';
 
 const CTRL_CHAR_CODE = 17;
 const L_CHAR_CODE = 76;
@@ -30,36 +29,6 @@ export default class Terminal extends Component {
         this.handleKeyDown = this.handleKeyDown.bind(this);
         this.handleKeyUp = this.handleKeyUp.bind(this);
         this.handleChange = this.handleChange.bind(this);
-    }
-
-    callback() {
-        console.log('Callback was called.');
-    }
-
-    autoType(messages) {
-        const message = messages.shift();
-        console.log(message);
-        if (!message) {
-            return;
-        }
-        const chars = message.text.split('');
-        var intervalId = setInterval(() => {
-            const newState = this.state;
-            const c = chars.shift();
-            if (!c) {
-                this.refs.submitButton.click();
-                clearInterval(intervalId);
-                if (messages) {
-                    const timeout = message.timeout || 0;
-                    var timeoutId = setTimeout(() => {this.autoType(messages)}, timeout);
-                    return false;
-                } else {
-                    return false;
-                }
-            }
-            newState.input.value += c;
-            this.setState(newState);
-        }, message.speed);
     }
 
     componentDidMount() {
@@ -104,6 +73,37 @@ export default class Terminal extends Component {
     */
     componentDidUpdate() {
         this.refs.input.scrollIntoView();
+    }
+
+/*
+* Autotype messages/commands into terminal's input
+*/
+    autoType(messages) {
+        const message = messages.shift();
+        if (!message) {
+            return;
+        }
+        const chars = message.text.split('');
+        const intervalId = setInterval(() => {
+            const newState = this.state;
+            const c = chars.shift();
+            if (!c) {
+                this.refs.submitButton.click();
+                clearInterval(intervalId);
+                if (messages) {
+                    const timeout = message.timeout || 0;
+                    setTimeout(() => {
+                        this.autoType(messages);
+                    }, timeout);
+                    return false;
+                } else {
+                    return false;
+                }
+            }
+            newState.input.value += c;
+            this.setState(newState);
+            return false;
+        }, message.speed);
     }
 
     /*
