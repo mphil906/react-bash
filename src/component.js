@@ -22,13 +22,51 @@ export default class Terminal extends Component {
             history: history.slice(),
             structure: Object.assign({}, structure),
             cwd: '',
+            input: {
+              value: '',
+            },
         };
         this.handleKeyDown = this.handleKeyDown.bind(this);
         this.handleKeyUp = this.handleKeyUp.bind(this);
+        this.handleChange = this.handleChange.bind(this);
     }
 
+    setIntervalSynchronous(func, delay) {
+      var intervalFunction, timeoutId, clear;
+      // Call to clear the interval.
+      clear = function () {
+        clearTimeout(timeoutId);
+      };
+      intervalFunction = function () {
+        func();
+        timeoutId = setTimeout(intervalFunction, delay);
+      }
+      // Delay start.
+      timeoutId = setTimeout(intervalFunction, delay);
+      // You should capture the returned function for clearing.
+      return clear;
+    };
+
     componentDidMount() {
-        this.refs.input.focus();
+      const greeting = {
+        text: "echo Hello World, my name is Michael Phillips.",
+        speed: 70
+      }
+
+      let chars = greeting.text.split("");
+      let typingInterval = this.setIntervalSynchronous(() => {
+        let newState = this.state;
+        let c = chars.shift();
+        if (!c) {
+          this.refs.submitButton.click();
+          typingInterval.clear();
+          return;
+        }
+        newState.input.value += c;
+        this.setState(newState);
+      }, greeting.speed);
+
+      this.refs.input.focus();
     }
 
     componentWillReceiveProps({ extensions, structure, history }) {
@@ -64,8 +102,7 @@ export default class Terminal extends Component {
      * update the input.
      */
     attemptAutocomplete() {
-        const input = this.refs.input.value;
-        const suggestion = this.Bash.autocomplete(input, this.state);
+        const suggestion = this.Bash.autocomplete(this.state.input.value, this.state);
         if (suggestion) {
             this.refs.input.value = suggestion;
         }
@@ -121,14 +158,21 @@ export default class Terminal extends Component {
         }
     }
 
+    handleChange(evt) {
+      let newState = this.state;
+      newState.input.value = evt.target.value;
+      this.setState(newState);
+    }
+
     handleSubmit(evt) {
+      console.log('SUBMISSION!~');
         evt.preventDefault();
 
         // Execute command
         const input = evt.target[0].value;
         const newState = this.Bash.execute(input, this.state);
+        newState.input.value = '';
         this.setState(newState);
-        this.refs.input.value = '';
     }
 
     renderHistoryItem(style) {
@@ -153,7 +197,7 @@ export default class Terminal extends Component {
                 </div>
                 <div style={style.body} onClick={() => this.refs.input.focus()}>
                     {history.map(this.renderHistoryItem(style))}
-                    <form onSubmit={evt => this.handleSubmit(evt)} style={style.form}>
+                    <form ref='rbterminal' onSubmit={evt => this.handleSubmit(evt)} style={style.form}>
                         <span style={style.prefix}>{`${prefix} ~${cwd} $`}</span>
                         <input
                           autoComplete="off"
@@ -161,7 +205,10 @@ export default class Terminal extends Component {
                           onKeyUp={this.handleKeyUp}
                           ref="input"
                           style={style.input}
+                          value={this.state.input.value}
+                          onChange={this.handleChange}
                         />
+                      <button style={{display:'none'}} ref='submitButton' type='submit'></button>
                     </form>
                 </div>
             </div>
